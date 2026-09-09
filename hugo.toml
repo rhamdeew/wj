@@ -1,0 +1,15 @@
+baseURL = 'https://wj.hmdw.me/'
+locale = 'ru'
+DefaultContentLanguage = 'ru'
+title = 'Jeep Вжик'
+theme = 'PaperMod'
+
+[params]
+  description = "Бортовой журнал Jeep Grand Cherokee WJ"
+  ShowShareButtons = false
+  ShowReadingTime = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = false
+  [params.Social]
+    # telegram = "your_channel"
