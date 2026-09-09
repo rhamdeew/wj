@@ -57,6 +57,19 @@ def save_state(state: dict) -> None:
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
 
 
+def local_date(message: dict) -> str:
+    """Telegram's `date` field has no UTC offset, so Hugo parses it as UTC
+    and treats recent posts as "future" once the local offset is behind.
+    Rebuild an offset-aware ISO string from `date_unixtime`, which encodes
+    the same local wall-clock moment unambiguously."""
+    ts = message.get("date_unixtime")
+    if ts is None:
+        return message["date"]
+    import datetime
+    dt = datetime.datetime.fromtimestamp(int(ts)).astimezone()
+    return dt.isoformat()
+
+
 def extract_text(message: dict) -> str:
     entities = message.get("text_entities") or []
     if entities:
@@ -83,19 +96,39 @@ def fix_bullets(text: str) -> str:
     return "\n".join(out)
 
 
+ALBUM_GAP_SECONDS = 120
+
+
 def group_messages(messages: list) -> list:
-    """Group consecutive `message`-type entries sharing the same timestamp
-    (Telegram exports albums as separate messages with identical `date`)."""
+    """Group album photos with the post they belong to. Telegram exports each
+    photo in an album as a separate `message` entry, and only the first one
+    carries the caption text; the rest export with no text at all. They're
+    also not guaranteed to share the exact same `date` second. So: a message
+    with text always starts a new group; a message with no text is folded
+    into the previous group as long as it followed within ALBUM_GAP_SECONDS
+    (guards against an unrelated caption-less post merging into an older
+    one)."""
     groups = []
     current = None
+    last_ts = None
     for m in messages:
         if m.get("type") != "message":
             continue
-        if current is not None and current[0]["date"] == m["date"]:
+        has_text = bool(extract_text(m).strip())
+        ts = m.get("date_unixtime")
+        gap_ok = (
+            current is not None
+            and not has_text
+            and last_ts is not None
+            and ts is not None
+            and int(ts) - int(last_ts) <= ALBUM_GAP_SECONDS
+        )
+        if gap_ok:
             current.append(m)
         else:
             current = [m]
             groups.append(current)
+        last_ts = ts
     return groups
 
 
@@ -117,7 +150,7 @@ def build_post(group: list, export_dir: Path, uploads_dir: Path, dry_run: bool):
             shutil.copy2(src, dest)
         photos.append(dest_name)
 
-    date = first["date"]
+    date = local_date(first)
     ids = [m["id"] for m in group]
 
     if text:

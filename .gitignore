@@ -1,3 +1,5 @@
 public/
 export/
 sync.sh
+scripts/__pycache__/
+scripts/.import-state.json
