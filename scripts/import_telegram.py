@@ -65,6 +65,24 @@ def extract_text(message: dict) -> str:
     return text if isinstance(text, str) else ""
 
 
+def fix_bullets(text: str) -> str:
+    """Telegram bullet lines start with '•' on their own line with no blank
+    line between items; CommonMark doesn't recognize '•' as a list marker,
+    so they'd render as one merged paragraph. Convert them to '- ' items."""
+    lines = text.split("\n")
+    out = []
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("• "):
+            prev_is_bullet = i > 0 and lines[i - 1].lstrip().startswith(("• ", "- "))
+            if not prev_is_bullet and out and out[-1].strip():
+                out.append("")
+            out.append("- " + stripped[2:])
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 def group_messages(messages: list) -> list:
     """Group consecutive `message`-type entries sharing the same timestamp
     (Telegram exports albums as separate messages with identical `date`)."""
@@ -85,6 +103,7 @@ def build_post(group: list, export_dir: Path, uploads_dir: Path, dry_run: bool):
     first = group[0]
     texts = [extract_text(m).strip() for m in group]
     text = "\n\n".join(t for t in texts if t)
+    text = fix_bullets(text)
 
     photos = []
     for m in group:
