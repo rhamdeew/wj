@@ -1,5 +1,5 @@
 ---
-title: "Итак, этим летом я достаточно сошел с ума чтобы купить 27-летний Jeep…"
+title: "Покупка Jeep Grand Cherokee WJ"
 date: 2026-06-28T00:10:28
 draft: false
 ---

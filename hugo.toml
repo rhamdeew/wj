@@ -1,7 +1,7 @@
 baseURL = 'https://wj.hmdw.me/'
 locale = 'ru'
 DefaultContentLanguage = 'ru'
-title = 'Jeep Вжик'
+title = 'Мой Jeep Grand Cherokee WJ'
 theme = 'PaperMod'
 
 [params]
